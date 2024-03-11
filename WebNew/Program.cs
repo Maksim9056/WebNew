@@ -14,12 +14,12 @@ namespace WebNew
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddDbContext<WebNewsContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("WebNewsContext") ?? throw new InvalidOperationException("Connection string 'WebNewsContext' not found.")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("WebNewContext") ?? throw new InvalidOperationException("Connection string 'WebNewsContext' not found.")));
             builder.Services.AddAuthentication("Bearer").AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    // ������������ ���������� ��������� ������ JWT
+                    // Конфигурация параметров валидации токена JWT
                     ValidateIssuer = true,
                     ValidIssuer = AuthOptions.ISSUER,
                     ValidateAudience = true,
@@ -29,8 +29,12 @@ namespace WebNew
                     ValidateIssuerSigningKey = true,
                 };
             });
-    //        builder.Services.AddDbContext<WebNew.Data.WebNew>(options =>
-    //options.UseNpgsql(builder.Configuration.GetConnectionString("WebNewContext") ?? throw new InvalidOperationException("Connection string 'WebApplicationTestContext' not found.")));
+
+            builder.Services.AddAuthentication();
+            builder.Services.AddControllers(); // Добавление сервисов для контроллеров API          
+
+            //        builder.Services.AddDbContext<WebNew.Data.WebNew>(options =>
+            //options.UseNpgsql(builder.Configuration.GetConnectionString("WebNewContext") ?? throw new InvalidOperationException("Connection string 'WebApplicationTestContext' not found.")));
 
             // Add services to the container.
             builder.Services.AddControllers();
@@ -46,8 +50,9 @@ namespace WebNew
                 app.UseHsts();
             }
 
-            app.UseStaticFiles(); // ��������� middleware ��� ������������ ����������� ������ �� ����� wwwroot
+            app.UseStaticFiles(); // 
             List<string> requestMain = new List<string>();
+            //requestMain.Add()
             //requestMain.Add()
 
             app.MapWhen(context => context.Request.Path.StartsWithSegments("/"), appBuilder =>
@@ -55,10 +60,10 @@ namespace WebNew
                 appBuilder.Run(async (context) =>
                 {
 
-                    //����� �����������
+                    //Войти Регистрация
                     string add = "";
-                    // ��������� ���������� ������� ������� ������ �� C#
-                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("�����"))
+                    // Добавляем обработчик события нажатия кнопки на C#
+                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("Войти"))
                     {
                         string mail1 = context.Request.Form["mail"];
                         string password = context.Request.Form["password"];
@@ -72,10 +77,10 @@ namespace WebNew
                         }
 
 
-                        //string Reg = context.Request.Form["�����������"];
+                        //string Reg = context.Request.Form["Регистрация"];
                     }
 
-                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("�����������"))
+                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("Регистрация"))
                     {
                         context.Response.Redirect("/Reg");
 
@@ -88,7 +93,7 @@ namespace WebNew
                     {
                         var indexHtmlContent = System.IO.File.ReadAllText("wwwroot/html/index.html");
                         add = indexHtmlContent;
-                        context.Response.ContentType = "text/html; charset=utf-8"; // ��������� ���������� ���������
+                        context.Response.ContentType = "text/html; charset=utf-8"; // Установка правильной кодировки
                         await context.Response.WriteAsync(add);
                     }
 
@@ -103,7 +108,7 @@ namespace WebNew
                 {
                     string add = "";
 
-                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("������������������"))
+                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("Зарегистрироваться"))
                     {
                         string name = context.Request.Form["name"];
                         string age = context.Request.Form["age"];
@@ -114,7 +119,7 @@ namespace WebNew
                         context.Response.Redirect("/", false);
                     }
 
-                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("�����"))
+                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("Назад"))
                     {
                         context.Response.Redirect("/", false);
 
@@ -124,7 +129,7 @@ namespace WebNew
                     {
                         var indexHtmlContent = System.IO.File.ReadAllText("wwwroot/html/Reguser.html");
                         add = indexHtmlContent;
-                        context.Response.ContentType = "text/html; charset=utf-8"; // ��������� ���������� ���������
+                        context.Response.ContentType = "text/html; charset=utf-8"; // Установка правильной кодировки
                         await context.Response.WriteAsync(add);
                     }
                 });
@@ -136,7 +141,7 @@ namespace WebNew
                 {
 
                     string add = "";
-                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("�����User"))
+                    if (context.Request.Method == "POST" && context.Request.Form.ContainsKey("ВойтиUser"))
                     {
 
                         context.Response.Redirect($"/admin/managmentuser/", false);
@@ -147,11 +152,12 @@ namespace WebNew
                     {
                         var indexHtmlContent = System.IO.File.ReadAllText("wwwroot/html/Admin.html");
                         add = indexHtmlContent;
-                        context.Response.ContentType = "text/html; charset=utf-8"; // ��������� ���������� ���������
+                        context.Response.ContentType = "text/html; charset=utf-8"; // Установка правильной кодировки
                         await context.Response.WriteAsync(add);
                     }
                 });
             });
+
 
             app.MapWhen(context => context.Request.Path.StartsWithSegments($"/admin/managmentuser/"), appBuilder =>
             {
@@ -165,7 +171,7 @@ namespace WebNew
             app.Map("/login/{username}", (string username) =>
             {
                 var claims = new List<Claim> { new Claim(ClaimTypes.Name, username) };
-                // ������� JWT-�����
+                // создаем JWT-токен
                 var jwt = new JwtSecurityToken(
                     issuer: AuthOptions.ISSUER,
                     audience: AuthOptions.AUDIENCE,
@@ -175,6 +181,7 @@ namespace WebNew
                 return new JwtSecurityTokenHandler().WriteToken(jwt);
             });
             app.Map("/data", () => new { message = "Hello World!" }).RequireAuthorization();
+
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
